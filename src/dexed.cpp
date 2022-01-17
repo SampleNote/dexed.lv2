@@ -546,8 +546,117 @@ void Dexed::GetSamples(uint32_t n_samples, float* buffer)
   }
 }
 
-bool Dexed::ProcessSysEx(const uint8_t *buf, uint32_t buf_size) {
-    ;
+bool Dexed::ProcessSysEx(const uint8_t *sysex, uint32_t len) {
+    if (sysex[len - 1] != 0xf7)
+    {
+      TRACE("SysEx end status byte not detected.");
+      return(false);
+    }
+
+    TRACE("SysEx ID=%d",sysex[1]);
+    TRACE("SysEx substatus=%d",(sysex[2] & 0x70) >> 4);
+
+    if (len == 7)
+    {
+        // parameter change
+        if (((sysex[3] & 0x7c) >> 2) != 0 && ((sysex[3] & 0x7c) >> 2) != 2)
+        {
+            TRACE("Not a SysEx parameter or function parameter change: %d", sysex[3] & 0x7c);
+            return(false);
+        }
+        else
+            return(ProcessSysExParameterChange(sysex,len));
+    }
+
+    return(true);
+}
+
+bool Dexed::ProcessSysExParameterChange(const uint8_t *sysex, uint32_t len) {
+    if ((sysex[3] & 0x7c) >> 2 == 0)
+        return(ProcessSysExVoiceParameterChange(sysex,len));
+    else if ((sysex[3] & 0x7c) >> 2 == 2)
+        return(ProcessSysExFunctionParameterChange(sysex,len));
+
+    return(true);
+}
+
+bool Dexed::ProcessSysExVoiceParameterChange(const uint8_t *sysex, uint32_t len) {
+    sysex[4] &= 0x7f;
+    sysex[5] &= 0x7f;
+
+    TRACE("SysEx Voice parameter: #%d = %d",sysex[4] + (sysex[3] & 0x03) * 128, sysex[5]);
+
+    onParam(sysex[4] + ((sysex[3] & 0x03) * 128), sysex[5]);
+
+    return(true);
+}
+
+bool Dexed::ProcessSysExFunctionParameterChange(const uint8_t *sysex, uint32_t len) {
+    sysex[4] &= 0x7f;
+    sysex[5] &= 0x7f;
+
+    TRACE("SysEx Function parameter: #%d = %d",sysex[4], sysex[5]);
+
+    switch (sysex[4])
+    {
+        case 65:
+            controllers.values_[kControllerPitchRange] = sysex[5];
+            break;
+          case 66:
+            controllers.values_[kControllerPitchStep] = sysex[5];
+            break;
+          case 67:
+            portamento_mode = sysex[5];
+            break;
+          case 68:
+            portamento_glissando = sysex[5];
+            break;
+          case 69:
+            controllers.portamento_cc = = sysex[5];
+if (portamento_time > 0)
+    controllers.portamento_enable_cc = true;
+  else
+    controllers.portamento_enable_cc = false;
+
+  controllers.values_[kControllerPortamentoGlissando] = portamento_glissando;
+            break;
+          case 70:
+            controllers.wheel.setRange(sysex[5]);
+            break;
+          case 71:
+            controllers.wheel.setTarget(sysex[5]);
+            break;
+          case 72:
+            controllers.foot.setRange(sysex[5]);
+            break;
+          case 73:
+            controllers.foot.setTarget(sysex[5]);
+            break;
+          case 74:
+            controllers.breath.setRange(sysex[5]);
+            break;
+          case 75:
+            controllers.breath.setTarget(sysex[5]);
+            break;
+          case 76:
+            controllers.at.setRange(sysex[5]);
+            break;
+          case 77:
+            controllers.at.setTarget(sysex[5]);
+            break;
+          default:
+            onParam(sysex[4], sysex[5]);
+            break;
+        }
+        controllers.refresh();
+    }
+    else
+    {
+        TRACE("Unknown SysEx voice or function: #%d = %d",sysex[4],sysex[5]);
+        return(false);
+    }
+
+    return(true);
 }
 
 bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
@@ -631,7 +740,7 @@ bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
         // sysex
             TRACE("MIDI sysex event: cmd=%d, size=%d",buf[0],size);
             if(buf[1]==0x43)
-                ProcessSysEx(buf, size);
+                ProcessSysEx(buf, buf_size);
             else
                 TRACE("Ignoring MIDI sysex ID (ID=%d): unknwon",buf[1]);
             break;
