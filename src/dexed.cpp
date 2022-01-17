@@ -1,5 +1,4 @@
-/**
- *
+/*
  * Copyright (c) 2016-2017 Holger Wirtz <dcoredump@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -547,6 +546,10 @@ void Dexed::GetSamples(uint32_t n_samples, float* buffer)
   }
 }
 
+bool Dexed::ProcessSysEx(const uint8_t *buf, uint32_t buf_size) {
+    ;
+}
+
 bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
     TRACE("Hi");
 
@@ -624,7 +627,14 @@ bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
             TRACE("MIDI pitchbend 0xe0 event: %d %d",buf[1],buf[2]);
             controllers.values_[kControllerPitch] = buf[1] | (buf[2] << 7);
             break;
-
+        case 0xf0 :
+        // sysex
+            TRACE("MIDI sysex event: cmd=%d, size=%d",buf[0],size);
+            if(buf[1]==0x43)
+                ProcessSysEx(buf, size);
+            else
+                TRACE("Ignoring MIDI sysex ID (ID=%d): unknwon",buf[1]);
+            break;
         default:
             TRACE("MIDI event unknown: cmd=%d, val1=%d, val2=%d",buf[0],buf[1],buf[2]);
             break;
