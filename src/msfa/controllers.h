@@ -47,7 +47,7 @@ struct FmMod {
     }
 
     void setRange(uint8_t r) {
-        range = r < 0 && r > 127 ? 0 : r;
+        range = r < 0 || r > 127 ? 0 : r;
 	TRACE("range=%d",range);
     }
 
