@@ -94,7 +94,10 @@ class Dexed : public lvtk::Synth<DexedVoice, Dexed>
   protected:
     bool ProcessSysEx(const uint8_t *sysex, uint32_t len);
     bool ProcessSysExParameterChange(const uint8_t *sysex, uint32_t len);
+    bool ProcessSysExVoiceParameterChange(const uint8_t *sysex, uint32_t len); 
+    bool ProcessSysExFunctionParameterChange(const uint8_t *sysex, uint32_t len); 
     bool ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size);
+    void setPortamentoMode(uint8_t portamento_mode, uint8_t portamento_glissando, uint8_t portamento_time);
     void onParam(uint8_t param_num,float param_val);
     void keyup(uint8_t pitch);
     void keydown(uint8_t pitch, uint8_t velo);

@@ -581,80 +581,70 @@ bool Dexed::ProcessSysExParameterChange(const uint8_t *sysex, uint32_t len) {
 }
 
 bool Dexed::ProcessSysExVoiceParameterChange(const uint8_t *sysex, uint32_t len) {
-    sysex[4] &= 0x7f;
-    sysex[5] &= 0x7f;
+    uint8_t p = sysex[4] & 0x7f;
+    uint8_t v = sysex[5] & 0x7f;
 
-    TRACE("SysEx Voice parameter: #%d = %d",sysex[4] + (sysex[3] & 0x03) * 128, sysex[5]);
+    TRACE("SysEx Voice parameter: #%d = %d",p + (sysex[3] & 0x03) * 128, v);
 
-    onParam(sysex[4] + ((sysex[3] & 0x03) * 128), sysex[5]);
+    onParam(p + ((sysex[3] & 0x03) * 128), v);
 
     return(true);
 }
 
 bool Dexed::ProcessSysExFunctionParameterChange(const uint8_t *sysex, uint32_t len) {
-    sysex[4] &= 0x7f;
-    sysex[5] &= 0x7f;
+    uint8_t p = sysex[4] & 0x7f;
+    uint8_t v = sysex[5] & 0x7f;
 
-    TRACE("SysEx Function parameter: #%d = %d",sysex[4], sysex[5]);
+    TRACE("SysEx Function parameter: #%d = %d",p, v);
 
-    switch (sysex[4])
+    switch (p)
     {
         case 65:
-            controllers.values_[kControllerPitchRange] = sysex[5];
+            controllers.values_[kControllerPitchRange] = v;
             break;
           case 66:
-            controllers.values_[kControllerPitchStep] = sysex[5];
+            controllers.values_[kControllerPitchStep] = v;
             break;
           case 67:
-            portamento_mode = sysex[5];
+            setPortamentoMode(v, controllers.values_[kControllerPortamentoGlissando], controllers.portamento_cc);
             break;
           case 68:
-            portamento_glissando = sysex[5];
+            setPortamentoMode(controllers.portamento_enable_cc, v, controllers.portamento_cc);
             break;
           case 69:
-            controllers.portamento_cc = = sysex[5];
-if (portamento_time > 0)
-    controllers.portamento_enable_cc = true;
-  else
-    controllers.portamento_enable_cc = false;
-
-  controllers.values_[kControllerPortamentoGlissando] = portamento_glissando;
+            setPortamentoMode(controllers.portamento_enable_cc, controllers.values_[kControllerPortamentoGlissando], v);
             break;
           case 70:
-            controllers.wheel.setRange(sysex[5]);
+            controllers.wheel.setRange(v);
             break;
           case 71:
-            controllers.wheel.setTarget(sysex[5]);
+            controllers.wheel.setTarget(v);
             break;
           case 72:
-            controllers.foot.setRange(sysex[5]);
+            controllers.foot.setRange(v);
             break;
           case 73:
-            controllers.foot.setTarget(sysex[5]);
+            controllers.foot.setTarget(v);
             break;
           case 74:
-            controllers.breath.setRange(sysex[5]);
+            controllers.breath.setRange(v);
             break;
           case 75:
-            controllers.breath.setTarget(sysex[5]);
+            controllers.breath.setTarget(v);
             break;
           case 76:
-            controllers.at.setRange(sysex[5]);
+            controllers.at.setRange(v);
             break;
           case 77:
-            controllers.at.setTarget(sysex[5]);
+            controllers.at.setTarget(v);
             break;
           default:
-            onParam(sysex[4], sysex[5]);
+            onParam(p, v);
             break;
-        }
-        controllers.refresh();
     }
-    else
-    {
-        TRACE("Unknown SysEx voice or function: #%d = %d",sysex[4],sysex[5]);
-        return(false);
-    }
+    controllers.refresh();
+
+    TRACE("Unknown SysEx voice or function: #%d = %d",p,v);
 
     return(true);
 }
@@ -738,7 +728,7 @@ bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
             break;
         case 0xf0 :
         // sysex
-            TRACE("MIDI sysex event: cmd=%d, size=%d",buf[0],size);
+            TRACE("MIDI sysex event: cmd=%d, size=%d",buf[0],buf_size);
             if(buf[1]==0x43)
                 ProcessSysEx(buf, buf_size);
             else
@@ -751,6 +741,21 @@ bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
 
     TRACE("Bye");
     return(false);
+}
+
+void Dexed::setPortamentoMode(uint8_t portamento_mode, uint8_t portamento_glissando, uint8_t portamento_time)
+{
+  controllers.portamento_cc = portamento_time;
+  controllers.portamento_enable_cc = portamento_mode > 63;
+
+  if (portamento_time > 0)
+    controllers.portamento_enable_cc = true;
+  else
+    controllers.portamento_enable_cc = false;
+
+  controllers.values_[kControllerPortamentoGlissando] = portamento_glissando;
+
+  controllers.refresh();
 }
 
 void Dexed::keydown(uint8_t pitch, uint8_t velo) {
