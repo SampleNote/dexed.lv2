@@ -7,7 +7,7 @@ DEBUG=1
 INSTALL_DIR=/zynthian/zynthian-plugins/lv2
 INSTALL_MYPLUGINS_DIR=/zynthian/zynthian-my-data/presets/lv2
 
-OBJ=fm_core.o env.o lfo.o dx7note.o sin.o pitchenv.o fm_op_kernel.o freqlut.o exp2.o EngineMkI.o EngineOpl.o PluginFx.o trace.o
+OBJ=fm_core.o env.o lfo.o dx7note.o sin.o pitchenv.o fm_op_kernel.o freqlut.o exp2.o EngineMkI.o EngineOpl.o PluginFx.o trace.o porta.o
 
 CXXFLAGS_LVTK=$(shell pkg-config --cflags lvtk-plugin-2)
 CXXFLAGS+=-fPIC -DPIC -std=c++11 -I. $(CXXFLAGS_LVTK) -DLVTK_DEBUG=false
@@ -130,5 +130,7 @@ EngineOpl.o: Makefile EngineOpl.cpp
 PluginFx.o: Makefile PluginFx.cpp
 	$(CXX) $(CXXFLAGS) -Wall -c PluginFx.cpp
 
+porta.o: Makefile porta.cpp
+	$(CXX) $(CXXFLAGS) -Wall -c porta.cpp
 dexed_ttl.h: Dexed.ttl
 	ttl2c Dexed.ttl dexed_ttl.h

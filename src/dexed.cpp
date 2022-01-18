@@ -30,6 +30,7 @@
 #include "PluginFx.h"
 #include <unistd.h>
 #include <limits.h>
+#include "porta.h"
 
 Dexed::Dexed(double rate) : lvtk::Synth<DexedVoice, Dexed>(p_n_ports, p_midi_in)
 {
@@ -46,6 +47,7 @@ Dexed::Dexed(double rate) : lvtk::Synth<DexedVoice, Dexed>(p_n_ports, p_midi_in)
   Lfo::init(rate);
   PitchEnv::init(rate);
   Env::init_sr(rate);
+  Porta::init_sr(rate);
   fx.init(rate);
 
   engineMkI=new EngineMkI;
