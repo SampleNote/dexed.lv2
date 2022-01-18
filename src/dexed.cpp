@@ -377,6 +377,9 @@ void Dexed::set_params(void)
   onParam(170,*p(p_op5_enable));
   onParam(171,*p(p_op6_enable));
   onParam(172,*p(p_number_of_voices));
+  onParam(173,*p(p_portamento_mode));
+  onParam(174,*p(p_portamento_gliss));
+  onParam(175,*p(p_portamento_time));
 
   if(_param_change_counter>PARAM_CHANGE_LEVEL)
   {
@@ -960,6 +963,15 @@ void Dexed::onParam(uint8_t param_num,float param_val)
       case 172:
         max_notes=data[param_num];
 	break;
+      case 173:
+        setPortamentoMode(data[173], controllers.values_[kControllerPortamentoGlissando], controllers.portamento_cc);
+        break;
+      case 174:
+        setPortamentoMode(controllers.portamento_enable_cc, data[174], controllers.portamento_cc);
+        break;
+      case 175:
+        setPortamentoMode(controllers.portamento_enable_cc, controllers.values_[kControllerPortamentoGlissando], data[175]);
+        break;
     }
 
     TRACE("Done: Parameter %d changed from %d to %d",param_num, tmp, data[param_num]);
