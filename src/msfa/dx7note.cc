@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include "synth.h"
 #include "freqlut.h"
+#include "porta.h"
 #include "exp2.h"
 #include "controllers.h"
 #include "dx7note.h"
@@ -29,6 +30,13 @@ int32_t midinote_to_logfreq(int midinote) {
     const int base = 50857777;  // (1 << 24) * (log(440) / log(2) - 69/12)
     const int step = (1 << 24) / 12;
     return base + step * midinote;
+}
+
+int32_t logfreq_round2semi(int freq) {
+    const int base = 50857777;  // (1 << 24) * (log(440) / log(2) - 69/12)
+    const int step = (1 << 24) / 12;
+    const int rem = (freq - base) % step;
+    return freq - rem;
 }
 
 const int32_t coarsemul[] = {
@@ -144,7 +152,7 @@ Dx7Note::Dx7Note() {
     }
 }
 
-void Dx7Note::init(const uint8_t patch[156], int midinote, int velocity) {
+void Dx7Note::init(const uint8_t patch[156], int midinote, int velocity, int srcnote, int porta) {
     int rates[4];
     int levels[4];
     for (int op = 0; op < 6; op++) {
@@ -173,6 +181,9 @@ void Dx7Note::init(const uint8_t patch[156], int midinote, int velocity) {
         opMode[op] = mode;
         basepitch_[op] = freq;
         ampmodsens_[op] = ampmodsenstab[patch[off + 14] & 3];
+
+        if (porta >= 0)
+            porta_curpitch_[op] = osc_freq(srcnote, mode, coarse, fine, detune);
     }
     for (int i = 0; i < 4; i++) {
         rates[i] = patch[126 + i];
@@ -185,6 +196,8 @@ void Dx7Note::init(const uint8_t patch[156], int midinote, int velocity) {
     pitchmoddepth_ = (patch[139] * 165) >> 6;
     pitchmodsens_ = pitchmodsenstab[patch[143] & 7];
     ampmoddepth_ = (patch[140] * 165) >> 6;
+    porta_rateindex_ = (porta < 128) ? porta : 127;
+    porta_gliss_ = patch[68];
 }
 
 void Dx7Note::compute(int32_t *buf, int32_t lfo_val, int32_t lfo_delay, const Controllers *ctrls) {
@@ -232,12 +245,20 @@ void Dx7Note::compute(int32_t *buf, int32_t lfo_val, int32_t lfo_delay, const Co
             params_[op].level_in = 0;
         } else {
             //int32_t gain = pow(2, 10 + level * (1.0 / (1 << 24)));
-            
+
+            int32_t basepitch = basepitch_[op];            
+
             if ( opMode[op] )
-                params_[op].freq = Freqlut::lookup(basepitch_[op] + pitch_base);
-            else
-                params_[op].freq = Freqlut::lookup(basepitch_[op] + pitch_mod);
-            
+                params_[op].freq = Freqlut::lookup(basepitch + pitch_base);
+            else {
+                if ( porta_rateindex_ >= 0 ) {
+                    basepitch = porta_curpitch_[op];
+                    if ( porta_gliss_ )
+                        basepitch = logfreq_round2semi(basepitch);
+                }
+                params_[op].freq = Freqlut::lookup(basepitch + pitch_mod);
+            }
+
             int32_t level = env_[op].getsample();
             if (ampmodsens_[op] != 0) {
                 uint32_t sensamp = (uint32_t)(((uint64_t) amd_mod) * ((uint64_t) ampmodsens_[op]) >> 24);
@@ -250,6 +271,25 @@ void Dx7Note::compute(int32_t *buf, int32_t lfo_val, int32_t lfo_delay, const Co
             params_[op].level_in = level;
         }
     }
+
+    // ==== PORTAMENTO ====
+    int porta = porta_rateindex_;
+    if ( porta >= 0 ) {
+        int32_t rate = Porta::rates[porta];
+        for (int op = 0; op < 6; op++) {
+            int32_t cur = porta_curpitch_[op];
+            int32_t dst = basepitch_[op];
+
+            bool going_up = cur < dst;
+            int32_t newpitch = cur + (going_up ? +rate : -rate);
+
+            if ( going_up ? (cur > dst) : (cur < dst) )
+                newpitch = dst;
+
+            porta_curpitch_[op] = newpitch;
+        }
+    }
+
     ctrls->core->render(buf, params_, algorithm_, fb_buf_, fb_shift_);
 }
 
@@ -260,7 +300,7 @@ void Dx7Note::keyup() {
     pitchenv_.keydown(false);
 }
 
-void Dx7Note::update(const uint8_t patch[156], int midinote, int velocity) {
+void Dx7Note::update(const uint8_t patch[156], int midinote, int velocity, int porta) {
     int rates[4];
     int levels[4];
     for (int op = 0; op < 6; op++) {
@@ -272,7 +312,10 @@ void Dx7Note::update(const uint8_t patch[156], int midinote, int velocity) {
         basepitch_[op] = osc_freq(midinote, mode, coarse, fine, detune);
         ampmodsens_[op] = ampmodsenstab[patch[off + 14] & 3];
         opMode[op] = mode;
-        
+
+        if (porta >= 0)
+            porta_curpitch_[op] = basepitch_[op];
+
         for (int i = 0; i < 4; i++) {
             rates[i] = patch[off + i];
             levels[i] = patch[off + 4 + i];
@@ -295,6 +338,8 @@ void Dx7Note::update(const uint8_t patch[156], int midinote, int velocity) {
     pitchmoddepth_ = (patch[139] * 165) >> 6;
     pitchmodsens_ = pitchmodsenstab[patch[143] & 7];
     ampmoddepth_ = (patch[140] * 165) >> 6;
+    porta_rateindex_ = (porta < 128) ? porta : 127;
+    porta_gliss_ = patch[68];
 }
 
 void Dx7Note::peekVoiceStatus(VoiceStatus &status) {

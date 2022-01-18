@@ -85,6 +85,7 @@ Dexed::Dexed(double rate) : lvtk::Synth<DexedVoice, Dexed>(p_n_ports, p_midi_in)
     TRACE("%d->%f",i,data_float[i]);
   }
 
+  lastKeyDown = -1;
   max_notes=16;
   currentNote = 0;
   controllers.values_[kControllerPitch] = 0x2000;
@@ -96,7 +97,8 @@ Dexed::Dexed(double rate) : lvtk::Synth<DexedVoice, Dexed>(p_n_ports, p_midi_in)
   controllers.aftertouch_cc = 0;
   controllers.masterTune=0;
   controllers.opSwitch=0x3f; // enable all operators
-  //controllers.opSwitch=0x00;
+  controllers.portamento_enable_cc = false;
+  controllers.portamento_cc = 0;
 
   bufsize_=256;
 
@@ -447,7 +449,7 @@ void Dexed::GetSamples(uint32_t n_samples, float* buffer)
   if(refreshVoice) {
     for(i=0;i < max_notes;i++) {
       if ( voices[i].live )
-        voices[i].dx7_note->update(data, voices[i].midi_note, voices[i].velocity);
+        voices[i].dx7_note->update(data, voices[i].midi_note, voices[i].velocity, voices[i].porta);
     }
     lfo.reset(data+137);
     refreshVoice = false;
@@ -687,6 +689,9 @@ bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
                     controllers.foot_cc = value;
                     controllers.refresh();
                     break;
+                case 5:
+                    controllers.portamento_cc = value;
+                    break;
                 case 64:
                     TRACE("MIDI sustain event: %d %d",ctrl,value);
                     sustain = value > 63;
@@ -698,6 +703,9 @@ bool Dexed::ProcessMidiMessage(const uint8_t *buf, uint32_t buf_size) {
                             }
                         }
                     }
+                    break;
+                case 65:
+                    controllers.portamento_enable_cc = value >= 64;
                     break;
                 case 120:
                     TRACE("MIDI all-sound-off: %d %d",ctrl,value);
@@ -769,7 +777,14 @@ TRACE("pitch=%d, velo=%d\n",pitch,velo);
     }
 
     pitch += data[144] - 24;
-    
+
+    int previousKeyDown = lastKeyDown;
+    lastKeyDown = pitch;
+
+    int porta = -1;
+    if ( controllers.portamento_enable_cc && previousKeyDown >= 0 )
+        porta = controllers.portamento_cc;
+
     uint8_t note = currentNote;
     uint8_t keydown_counter=0;
 
@@ -778,9 +793,10 @@ TRACE("pitch=%d, velo=%d\n",pitch,velo);
             currentNote = (note + 1) % max_notes;
             voices[note].midi_note = pitch;
             voices[note].velocity = velo;
+            voices[note].porta = porta;
             voices[note].sustained = sustain;
             voices[note].keydown = true;
-            voices[note].dx7_note->init(data, pitch, velo);
+            voices[note].dx7_note->init(data, pitch, velo, previousKeyDown, porta);
             if ( data[136] )
                 voices[note].dx7_note->oscSync();
             break;

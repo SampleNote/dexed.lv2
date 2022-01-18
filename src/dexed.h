@@ -39,6 +39,7 @@
 struct ProcessorVoice {
     uint8_t midi_note;
     uint8_t velocity;
+    int porta;
     bool keydown;
     bool sustained;
     bool live;
@@ -121,6 +122,7 @@ class Dexed : public lvtk::Synth<DexedVoice, Dexed>
     uint32_t bufsize_;
     float extra_buf_[N];
     uint32_t extra_buf_size_;
+    int lastKeyDown;
 
   private:
     double _rate;
