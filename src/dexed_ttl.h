@@ -189,6 +189,9 @@ enum p_port_enum {
   p_op4_enable,
   p_op5_enable,
   p_op6_enable,
+  p_portamento_mode,
+  p_portamento_gliss,
+  p_portamento_time,
   p_n_ports
 };
 
@@ -363,6 +366,9 @@ static const peg_data_t p_ports[] = {
   { 0, 1, 1, 0, 1, 0 }, 
   { 0, 1, 1, 0, 1, 0 }, 
   { 0, 1, 1, 0, 1, 0 }, 
+  { 0, 1, 0, 0, 1, 0 }, 
+  { 0, 1, 0, 0, 1, 0 }, 
+  { 0, 1, 0, 0, 1, 0 }, 
 };
 
 

@@ -2384,6 +2384,57 @@ The original engine comes from MSFA (music synthesizer for android) which is bas
             rdfs:comment "On" ;
         ];
         pg:group dexed_lv2:OP6_04 ;
+    ] ,
+    [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 170 ;
+        lv2:symbol "portamento_mode" ;
+        lv2:name "Portamento Mode" ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 1 ;
+        lv2:portProperty lv2:integer ;
+        lv2:scalePoint [
+            rdf:value 0 ;
+            rdfs:label "Off" ;
+            rdfs:comment "Off" ;
+        ], [
+            rdf:value 1 ;
+            rdfs:label "On" ;
+            rdfs:comment "On" ;
+        ];
+        pg:group dexed_lv2:CONTROL ;
+    ] ,
+    [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 171 ;
+        lv2:symbol "portamento_gliss" ;
+        lv2:name "Portamento Mode" ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 1 ;
+        lv2:portProperty lv2:integer ;
+        lv2:scalePoint [
+            rdf:value 0 ;
+            rdfs:label "Off" ;
+            rdfs:comment "Off" ;
+        ], [
+            rdf:value 1 ;
+            rdfs:label "On" ;
+            rdfs:comment "On" ;
+        ];
+        pg:group dexed_lv2:CONTROL ;
+    ] ,
+    [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 172 ;
+        lv2:symbol "portamento_time" ;
+        lv2:name "Portamento Time" ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 1 ;
+        lv2:portProperty lv2:integer ;
+        pg:group dexed_lv2:CONTROL ;
     ] ;
 
     doap:name "Dexed" ;
