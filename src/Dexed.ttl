@@ -2432,7 +2432,7 @@ The original engine comes from MSFA (music synthesizer for android) which is bas
         lv2:name "Portamento Time" ;
         lv2:default 0 ;
         lv2:minimum 0 ;
-        lv2:maximum 1 ;
+        lv2:maximum 99 ;
         lv2:portProperty lv2:integer ;
         pg:group dexed_lv2:CONTROL ;
     ] ;
