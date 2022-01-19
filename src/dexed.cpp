@@ -761,7 +761,7 @@ void Dexed::setPortamentoMode(uint8_t portamento_mode, uint8_t portamento_glissa
   controllers.portamento_cc = portamento_time;
   controllers.portamento_enable_cc = portamento_mode > 63;
 
-  if (portamento_time > 0)
+  if (portamento_mode > 63 && portamento_time > 0)
     controllers.portamento_enable_cc = true;
   else
     controllers.portamento_enable_cc = false;
