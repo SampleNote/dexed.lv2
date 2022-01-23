@@ -152,7 +152,7 @@ Dx7Note::Dx7Note() {
     }
 }
 
-void Dx7Note::init(const uint8_t patch[156], int midinote, int velocity, int srcnote, int porta) {
+void Dx7Note::init(const uint8_t patch[156], int midinote, int velocity, int srcnote, int porta, const Controllers *ctrls) {
     int rates[4];
     int levels[4];
     for (int op = 0; op < 6; op++) {
@@ -197,7 +197,7 @@ void Dx7Note::init(const uint8_t patch[156], int midinote, int velocity, int src
     pitchmodsens_ = pitchmodsenstab[patch[143] & 7];
     ampmoddepth_ = (patch[140] * 165) >> 6;
     porta_rateindex_ = (porta < 128) ? porta : 127;
-    porta_gliss_ = patch[68];
+    porta_gliss_ = ctrls->values_[kControllerPortamentoGlissando];
 }
 
 void Dx7Note::compute(int32_t *buf, int32_t lfo_val, int32_t lfo_delay, const Controllers *ctrls) {

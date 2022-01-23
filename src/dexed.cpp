@@ -91,6 +91,7 @@ Dexed::Dexed(double rate) : lvtk::Synth<DexedVoice, Dexed>(p_n_ports, p_midi_in)
   controllers.values_[kControllerPitch] = 0x2000;
   controllers.values_[kControllerPitchRange] = 0;
   controllers.values_[kControllerPitchStep] = 0;
+  controllers.values_[kControllerPortamentoGlissando] = 0;
   controllers.modwheel_cc = 0;
   controllers.foot_cc = 0;
   controllers.breath_cc = 0;
@@ -761,7 +762,7 @@ void Dexed::setPortamentoMode(uint8_t portamento_mode, uint8_t portamento_glissa
   controllers.portamento_cc = portamento_time;
   controllers.portamento_enable_cc = portamento_mode > 63;
 
-  if (portamento_mode > 63 && portamento_time > 0)
+  if (portamento_time > 0)
     controllers.portamento_enable_cc = true;
   else
     controllers.portamento_enable_cc = false;
@@ -799,7 +800,7 @@ TRACE("pitch=%d, velo=%d\n",pitch,velo);
             voices[note].porta = porta;
             voices[note].sustained = sustain;
             voices[note].keydown = true;
-            voices[note].dx7_note->init(data, pitch, velo, previousKeyDown, porta);
+            voices[note].dx7_note->init(data, pitch, velo, previousKeyDown, porta, &controllers);
             if ( data[136] )
                 voices[note].dx7_note->oscSync();
             break;

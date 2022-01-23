@@ -37,7 +37,7 @@ struct VoiceStatus {
 class Dx7Note {
 public:
     Dx7Note();
-    void init(const uint8_t patch[156], int midinote, int velocity, int srcnote, int porta);
+    void init(const uint8_t patch[156], int midinote, int velocity, int srcnote, int porta, const Controllers *ctrls);
     
     // Note: this _adds_ to the buffer. Interesting question whether it's
     // worth it...
