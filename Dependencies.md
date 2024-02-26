@@ -6,6 +6,8 @@ Follows some dependencies required to build this project.
 
 _Note: Needs validation._
 
+Ref. https://github.com/asb2m10/dexed/wiki/Linux-build-dependencies
+
 ```shell
 sudo apt install libx11-dev \
 libcurl4-gnutls-dev \
